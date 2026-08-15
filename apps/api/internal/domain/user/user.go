@@ -1,13 +1,21 @@
 package user
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type User struct {
 	id      UserID
 	profile UserProfile
+	status  UserStatus
 }
 
 func NewUser(name string) (*User, error) {
+	if strings.TrimSpace(name) == "" {
+		return nil, ErrUsernameRequired
+	}
+
 	id, err := newUserID()
 	if err != nil {
 		return nil, fmt.Errorf("create User: %w", err)
@@ -16,16 +24,42 @@ func NewUser(name string) (*User, error) {
 	return &User{
 		id:      id,
 		profile: NewUserProfile(id, name),
+		status:  UserStatusActive,
 	}, nil
 }
 
-func Reconstruct(id UserID) (*User, error) {
+func Reconstruct(id UserID, name string, status UserStatus) (*User, error) {
 	if id.IsZero() {
 		return nil, ErrInvalidUserID
 	}
-	return &User{id: id}, nil
+
+	if strings.TrimSpace(name) == "" {
+		return nil, ErrUsernameRequired
+	}
+
+	if !status.IsValid() {
+		return nil, ErrInvalidUserStatus
+	}
+
+	return &User{id: id, profile: NewUserProfile(id, name), status: status}, nil
 }
 
-func (w *User) ID() UserID {
-	return w.id
+func (u *User) ID() UserID {
+	return u.id
+}
+
+func (u *User) Suspend() {
+	u.status = UserStatusSuspended
+}
+
+func (u *User) Reactivate() {
+	u.status = UserStatusActive
+}
+
+func (u *User) Name() string {
+	return u.profile.name
+}
+
+func (u *User) Status() UserStatus {
+	return u.status
 }

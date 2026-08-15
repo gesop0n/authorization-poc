@@ -1,13 +1,10 @@
 package user
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 )
-
-var ErrInvalidUserID = errors.New("Invalid User ID")
 
 type UserID struct {
 	value uuid.UUID
