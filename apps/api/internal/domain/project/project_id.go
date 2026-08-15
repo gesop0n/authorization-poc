@@ -1,13 +1,10 @@
 package project
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 )
-
-var ErrInvalidProjectID = errors.New("Invalid Project ID")
 
 type ProjectID struct {
 	value uuid.UUID
