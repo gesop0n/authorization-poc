@@ -2,7 +2,10 @@ module github.com/gesop0n/authorization-poc/apps/api
 
 go 1.25.12
 
-require github.com/gin-gonic/gin v1.12.0
+require (
+	github.com/gin-gonic/gin v1.12.0
+	github.com/google/uuid v1.6.0
+)
 
 require (
 	github.com/bytedance/gopkg v0.1.4 // indirect
