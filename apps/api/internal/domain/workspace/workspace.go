@@ -160,6 +160,11 @@ func (w *Workspace) Members() []WorkspaceMember {
 	return slices.Clone(w.members)
 }
 
+// HasMember は、ユーザーがワークスペースに所属しているかを返す。
+func (w *Workspace) HasMember(userID user.UserID) bool {
+	return w.hasMember(userID)
+}
+
 func (w *Workspace) hasMember(userID user.UserID) bool {
 	for _, member := range w.members {
 		if member.UserID().Equal(userID) {
