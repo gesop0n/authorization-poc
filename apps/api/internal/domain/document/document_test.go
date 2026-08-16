@@ -7,7 +7,7 @@ import (
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/document"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/project"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/user"
-	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/workspace"
+	"github.com/gesop0n/authorization-poc/apps/api/internal/testutil"
 )
 
 func TestNewDocument(t *testing.T) {
@@ -143,21 +143,5 @@ func TestDocumentArchiveAndRestore(t *testing.T) {
 
 func newTestDocument(t *testing.T) (*document.Document, *project.Project, *user.User) {
 	t.Helper()
-	owner, err := user.NewUser("owner")
-	if err != nil {
-		t.Fatal(err)
-	}
-	ws, err := workspace.NewWorkspace("workspace", owner.ID())
-	if err != nil {
-		t.Fatal(err)
-	}
-	p, err := project.NewProject("project", ws.ID(), owner.ID())
-	if err != nil {
-		t.Fatal(err)
-	}
-	d, err := document.NewDocument(p.ID(), owner.ID(), "title", "content", document.ConfidentialityInternal)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return d, p, owner
+	return testutil.NewDocumentWithProject(t)
 }

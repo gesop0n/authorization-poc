@@ -7,6 +7,7 @@ import (
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/project"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/user"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/workspace"
+	"github.com/gesop0n/authorization-poc/apps/api/internal/testutil"
 )
 
 func TestNewProject(t *testing.T) {
@@ -162,29 +163,15 @@ func TestProjectRenameArchiveAndRestore(t *testing.T) {
 
 func newTestProject(t *testing.T) (*project.Project, *workspace.Workspace, *user.User) {
 	t.Helper()
-	ws, admin := newTestWorkspace(t)
-	p, err := project.NewProject("name", ws.ID(), admin.ID())
-	if err != nil {
-		t.Fatalf("NewProject() error = %v", err)
-	}
-	return p, ws, admin
+	return testutil.NewProjectWithWorkspace(t, "name", "workspace", "owner")
 }
 
 func newTestWorkspace(t *testing.T) (*workspace.Workspace, *user.User) {
 	t.Helper()
-	owner := newTestUser(t, "owner")
-	ws, err := workspace.NewWorkspace("workspace", owner.ID())
-	if err != nil {
-		t.Fatalf("NewWorkspace() error = %v", err)
-	}
-	return ws, owner
+	return testutil.NewWorkspaceWithOwner(t, "workspace", "owner")
 }
 
 func newTestUser(t *testing.T, name string) *user.User {
 	t.Helper()
-	u, err := user.NewUser(name)
-	if err != nil {
-		t.Fatalf("NewUser() error = %v", err)
-	}
-	return u
+	return testutil.NewUser(t, name)
 }

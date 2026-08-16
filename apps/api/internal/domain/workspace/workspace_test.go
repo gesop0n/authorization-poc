@@ -6,6 +6,7 @@ import (
 
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/user"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/workspace"
+	"github.com/gesop0n/authorization-poc/apps/api/internal/testutil"
 )
 
 func TestNewWorkspace(t *testing.T) {
@@ -448,23 +449,10 @@ func TestNewWorkspaceRoleRejectsInvalidValue(t *testing.T) {
 
 func newTestWorkspace(t *testing.T) (*workspace.Workspace, *user.User) {
 	t.Helper()
-
-	owner := newTestUser(t, "owner")
-	ws, err := workspace.NewWorkspace("name", owner.ID())
-	if err != nil {
-		t.Fatalf("NewWorkspace() error = %v", err)
-	}
-
-	return ws, owner
+	return testutil.NewWorkspaceWithOwner(t, "name", "owner")
 }
 
 func newTestUser(t *testing.T, name string) *user.User {
 	t.Helper()
-
-	u, err := user.NewUser(name)
-	if err != nil {
-		t.Fatalf("NewUser() error = %v", err)
-	}
-
-	return u
+	return testutil.NewUser(t, name)
 }
