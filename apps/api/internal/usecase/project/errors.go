@@ -1,4 +1,4 @@
-package projectusecase
+package project
 
 import "errors"
 

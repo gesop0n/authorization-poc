@@ -1,28 +1,28 @@
-package projectusecase
+package project
 
 import (
 	"context"
 
-	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/project"
+	domainproject "github.com/gesop0n/authorization-poc/apps/api/internal/domain/project"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/user"
 	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/workspace"
 )
 
 type AddMemberUseCase struct {
 	workspaceRepository workspace.WorkspaceRepository
-	projectRepository   project.ProjectRepository
+	projectRepository   domainproject.ProjectRepository
 }
 
 type AddMemberInput struct {
 	WorkspaceID workspace.WorkspaceID
-	ProjectID   project.ProjectID
+	ProjectID   domainproject.ProjectID
 	UserID      user.UserID
-	Role        project.ProjectRole
+	Role        domainproject.ProjectRole
 }
 
 func NewAddMemberUseCase(
 	workspaceRepository workspace.WorkspaceRepository,
-	projectRepository project.ProjectRepository,
+	projectRepository domainproject.ProjectRepository,
 ) *AddMemberUseCase {
 	return &AddMemberUseCase{
 		workspaceRepository: workspaceRepository,

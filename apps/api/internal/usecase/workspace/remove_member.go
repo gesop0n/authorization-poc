@@ -1,1 +1,1 @@
-package workspaceusecase
+package workspace
