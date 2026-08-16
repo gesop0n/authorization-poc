@@ -136,6 +136,17 @@ func (p *Project) AddMember(userID user.UserID, role ProjectRole) error {
 }
 
 func (p *Project) RemoveMember(userID user.UserID) error {
+	if err := p.CanRemoveMember(userID); err != nil {
+		return err
+	}
+
+	index := p.memberIndex(userID)
+	p.members = append(p.members[:index:index], p.members[index+1:]...)
+	return nil
+}
+
+// CanRemoveMember は、状態を変更せずにメンバーを削除できるか検証する。
+func (p *Project) CanRemoveMember(userID user.UserID) error {
 	index := p.memberIndex(userID)
 	if index < 0 {
 		return ErrProjectMemberNotFound
@@ -143,7 +154,6 @@ func (p *Project) RemoveMember(userID user.UserID) error {
 	if p.members[index].Role() == ProjectRoleAdmin && p.adminCount() == 1 {
 		return ErrProjectMustHaveAdmin
 	}
-	p.members = append(p.members[:index:index], p.members[index+1:]...)
 	return nil
 }
 

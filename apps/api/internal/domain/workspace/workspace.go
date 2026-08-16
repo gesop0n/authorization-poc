@@ -113,6 +113,18 @@ func (w *Workspace) AddMember(userID user.UserID, role WorkspaceRole) error {
 
 // ワークスペースからメンバーを削除する。
 func (w *Workspace) RemoveMember(userID user.UserID) error {
+	if err := w.CanRemoveMember(userID); err != nil {
+		return err
+	}
+
+	index := w.memberIndex(userID)
+	w.members = append(w.members[:index:index], w.members[index+1:]...)
+
+	return nil
+}
+
+// CanRemoveMember は、状態を変更せずにメンバーを削除できるか検証する。
+func (w *Workspace) CanRemoveMember(userID user.UserID) error {
 	index := w.memberIndex(userID)
 	if index == -1 {
 		return ErrWorkspaceMemberNotFound
@@ -123,8 +135,6 @@ func (w *Workspace) RemoveMember(userID user.UserID) error {
 	if target.Role() == WorkspaceRoleOwner && w.ownerCount() == 1 {
 		return ErrWorkspaceMustHaveOwner
 	}
-
-	w.members = append(w.members[:index:index], w.members[index+1:]...)
 
 	return nil
 }
