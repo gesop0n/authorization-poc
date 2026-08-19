@@ -11,4 +11,7 @@ var (
 	ErrProjectMemberAlreadyExists = errors.New("project member already exists")
 	ErrProjectMemberNotFound      = errors.New("project member not found")
 	ErrProjectMustHaveAdmin       = errors.New("project must have at least one admin")
+
+	// プロジェクトはアーカイブ済み
+	ErrProjectArchived = errors.New("project has already archived")
 )

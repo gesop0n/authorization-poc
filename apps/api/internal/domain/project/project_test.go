@@ -161,6 +161,113 @@ func TestProjectRenameArchiveAndRestore(t *testing.T) {
 	}
 }
 
+func TestArchivedProjectRejectsRename(t *testing.T) {
+	t.Parallel()
+
+	p, _, _ := newTestProject(t)
+	originalName := p.Name()
+
+	p.Archive()
+
+	err := p.Rename("changed")
+
+	if !errors.Is(err, project.ErrProjectArchived) {
+		t.Fatalf("Rename() error = %v, want %v", err, project.ErrProjectArchived)
+	}
+	if p.Name() != originalName {
+		t.Fatal("Rename() changed an archived project")
+	}
+}
+
+func TestArchivedProjectRejectsAddMember(t *testing.T) {
+	t.Parallel()
+
+	p, _, _ := newTestProject(t)
+	member := newTestUser(t, "member")
+	originalMembers := p.Members()
+	p.Archive()
+
+	err := p.AddMember(member.ID(), project.ProjectRoleViewer)
+
+	if !errors.Is(err, project.ErrProjectArchived) {
+		t.Fatalf("AddMember() error = %v, want %v", err, project.ErrProjectArchived)
+	}
+	if p.HasMember(member.ID()) || len(p.Members()) != len(originalMembers) {
+		t.Fatal("AddMember() changed an archived project")
+	}
+}
+
+func TestArchivedProjectRejectsRemoveMember(t *testing.T) {
+	t.Parallel()
+
+	p, _, _ := newTestProject(t)
+	member := newTestUser(t, "member")
+	if err := p.AddMember(member.ID(), project.ProjectRoleViewer); err != nil {
+		t.Fatalf("AddMember() setup error = %v", err)
+	}
+	p.Archive()
+
+	err := p.RemoveMember(member.ID())
+
+	if !errors.Is(err, project.ErrProjectArchived) {
+		t.Fatalf("RemoveMember() error = %v, want %v", err, project.ErrProjectArchived)
+	}
+	if !p.HasMember(member.ID()) {
+		t.Fatal("RemoveMember() changed an archived project")
+	}
+}
+
+func TestArchivedProjectRejectsMemberRemovalValidation(t *testing.T) {
+	t.Parallel()
+
+	p, _, admin := newTestProject(t)
+	p.Archive()
+
+	err := p.CanRemoveMember(admin.ID())
+
+	if !errors.Is(err, project.ErrProjectArchived) {
+		t.Fatalf("CanRemoveMember() error = %v, want %v", err, project.ErrProjectArchived)
+	}
+}
+
+func TestArchivedProjectRejectsMemberRoleChange(t *testing.T) {
+	t.Parallel()
+
+	p, _, _ := newTestProject(t)
+	member := newTestUser(t, "member")
+	if err := p.AddMember(member.ID(), project.ProjectRoleViewer); err != nil {
+		t.Fatalf("AddMember() setup error = %v", err)
+	}
+	p.Archive()
+
+	err := p.ChangeMemberRole(member.ID(), project.ProjectRoleEditor)
+
+	if !errors.Is(err, project.ErrProjectArchived) {
+		t.Fatalf("ChangeMemberRole() error = %v, want %v", err, project.ErrProjectArchived)
+	}
+	if p.Members()[1].Role() != project.ProjectRoleViewer {
+		t.Fatal("ChangeMemberRole() changed an archived project")
+	}
+}
+
+func TestRestoredProjectAllowsMemberChanges(t *testing.T) {
+	t.Parallel()
+
+	p, _, _ := newTestProject(t)
+	member := newTestUser(t, "member")
+	p.Archive()
+	p.Restore()
+
+	err := p.AddMember(member.ID(), project.ProjectRoleViewer)
+
+	if err != nil {
+		t.Fatalf("AddMember() error = %v", err)
+	}
+	if !p.HasMember(member.ID()) {
+		t.Fatal("AddMember() did not change a restored project")
+	}
+}
+
 func newTestProject(t *testing.T) (*project.Project, *workspace.Workspace, *user.User) {
 	t.Helper()
 	return testutil.NewProjectWithWorkspace(t, "name", "workspace", "owner")

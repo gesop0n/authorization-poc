@@ -102,6 +102,11 @@ func (p *Project) Status() ProjectStatus {
 }
 
 func (p *Project) Rename(name string) error {
+	// アーカイブ済みの場合は読み取り専用
+	if p.Status() == ProjectStatusArchived {
+		return ErrProjectArchived
+	}
+
 	if strings.TrimSpace(name) == "" {
 		return ErrProjectNameRequired
 	}
@@ -122,6 +127,11 @@ func (p *Project) Restore() {
 // UserがこのProjectのWorkspaceに所属しているかは別集約の情報なので、呼び出し前に
 // アプリケーション層で Workspace.HasMember を使って検証する。
 func (p *Project) AddMember(userID user.UserID, role ProjectRole) error {
+	// アーカイブ済みの場合は読み取り専用
+	if p.Status() == ProjectStatusArchived {
+		return ErrProjectArchived
+	}
+
 	if userID.IsZero() {
 		return ErrInvalidProjectMemberUserID
 	}
@@ -136,6 +146,11 @@ func (p *Project) AddMember(userID user.UserID, role ProjectRole) error {
 }
 
 func (p *Project) RemoveMember(userID user.UserID) error {
+	// アーカイブ済みの場合は読み取り専用
+	if p.Status() == ProjectStatusArchived {
+		return ErrProjectArchived
+	}
+
 	if err := p.CanRemoveMember(userID); err != nil {
 		return err
 	}
@@ -147,6 +162,11 @@ func (p *Project) RemoveMember(userID user.UserID) error {
 
 // CanRemoveMember は、状態を変更せずにメンバーを削除できるか検証する。
 func (p *Project) CanRemoveMember(userID user.UserID) error {
+	// アーカイブ済みの場合は読み取り専用
+	if p.Status() == ProjectStatusArchived {
+		return ErrProjectArchived
+	}
+
 	index := p.memberIndex(userID)
 	if index < 0 {
 		return ErrProjectMemberNotFound
@@ -158,6 +178,11 @@ func (p *Project) CanRemoveMember(userID user.UserID) error {
 }
 
 func (p *Project) ChangeMemberRole(userID user.UserID, role ProjectRole) error {
+	// アーカイブ済みの場合は読み取り専用
+	if p.Status() == ProjectStatusArchived {
+		return ErrProjectArchived
+	}
+
 	if !role.IsValid() {
 		return ErrInvalidProjectRole
 	}
