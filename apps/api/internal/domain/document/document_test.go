@@ -21,6 +21,18 @@ func TestNewDocument(t *testing.T) {
 	}
 }
 
+func TestNewPrivateDocument(t *testing.T) {
+	t.Parallel()
+	_, p, owner := newTestDocument(t)
+	d, err := document.NewDocument(p.ID(), owner.ID(), "private", "content", document.ConfidentialityPrivate)
+	if err != nil {
+		t.Fatalf("NewDocument() error = %v", err)
+	}
+	if d.Confidentiality() != document.ConfidentialityPrivate {
+		t.Fatalf("Confidentiality() = %q, want %q", d.Confidentiality(), document.ConfidentialityPrivate)
+	}
+}
+
 func TestNewDocumentRejectsInvalidValues(t *testing.T) {
 	t.Parallel()
 	_, p, owner := newTestDocument(t)

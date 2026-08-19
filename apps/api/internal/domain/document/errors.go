@@ -14,4 +14,7 @@ var (
 
 	// ドキュメントの状態が不正
 	ErrInvalidDocumentStatus = errors.New("invalid document status")
+
+	// ドキュメントはアーカイブ済み
+	ErrDocumentArchived = errors.New("document is archived")
 )
