@@ -7,4 +7,6 @@ var (
 	ErrDocumentGrantAlreadyExists = errors.New("document grant already exists")
 	ErrDocumentGrantNotFound      = errors.New("document grant not found")
 	ErrDocumentGrantRevoked       = errors.New("document grant is revoked")
+	ErrExternalSharingProhibited  = errors.New("external sharing is prohibited")
+	ErrDocumentNotShareable       = errors.New("document is not shareable")
 )
