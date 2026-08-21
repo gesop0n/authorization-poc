@@ -1,13 +1,13 @@
 package user
 
 type UserProfile struct {
-	userID UserID
-	name   string
+	userID      UserID
+	displayName string
 }
 
-func NewUserProfile(userID UserID, name string) UserProfile {
+func NewUserProfile(userID UserID, displayName string) UserProfile {
 	return UserProfile{
-		userID: userID,
-		name:   name,
+		userID:      userID,
+		displayName: displayName,
 	}
 }

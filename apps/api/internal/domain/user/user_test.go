@@ -14,7 +14,7 @@ func TestNewUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewUser() error = %v", err)
 	}
-	if u.ID().IsZero() || u.Name() != "name" || u.Status() != user.UserStatusActive {
+	if u.ID().IsZero() || u.DisplayName() != "name" || u.Status() != user.UserStatusActive {
 		t.Fatal("NewUser() returned an unexpected user")
 	}
 }
@@ -37,7 +37,7 @@ func TestReconstructUser(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Reconstruct() error = %v", err)
 	}
-	if u.Name() != "restored" || u.Status() != user.UserStatusSuspended {
+	if u.DisplayName() != "restored" || u.Status() != user.UserStatusSuspended {
 		t.Fatal("Reconstruct() did not restore all values")
 	}
 }

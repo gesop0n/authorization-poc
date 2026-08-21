@@ -56,8 +56,8 @@ func (u *User) Reactivate() {
 	u.status = UserStatusActive
 }
 
-func (u *User) Name() string {
-	return u.profile.name
+func (u *User) DisplayName() string {
+	return u.profile.displayName
 }
 
 func (u *User) Status() UserStatus {
