@@ -16,20 +16,8 @@ func TestNewDocument(t *testing.T) {
 	if d.ID().IsZero() || !d.ProjectID().Equal(p.ID()) || !d.OwnerUserID().Equal(owner.ID()) {
 		t.Fatal("NewDocument() returned unexpected IDs")
 	}
-	if d.Title() != "title" || d.Content() != "content" || d.Confidentiality() != document.ConfidentialityInternal || d.Status() != document.DocumentStatusActive {
+	if d.Title() != "title" || d.Content() != "content" {
 		t.Fatal("NewDocument() returned unexpected values")
-	}
-}
-
-func TestNewPrivateDocument(t *testing.T) {
-	t.Parallel()
-	_, p, owner := newTestDocument(t)
-	d, err := document.NewDocument(p.ID(), owner.ID(), "private", "content", document.ConfidentialityPrivate)
-	if err != nil {
-		t.Fatalf("NewDocument() error = %v", err)
-	}
-	if d.Confidentiality() != document.ConfidentialityPrivate {
-		t.Fatalf("Confidentiality() = %q, want %q", d.Confidentiality(), document.ConfidentialityPrivate)
 	}
 }
 
@@ -37,22 +25,20 @@ func TestNewDocumentRejectsInvalidValues(t *testing.T) {
 	t.Parallel()
 	_, p, owner := newTestDocument(t)
 	tests := []struct {
-		name            string
-		projectID       project.ProjectID
-		ownerID         user.UserID
-		title           string
-		confidentiality document.Confidentiality
-		wantErr         error
+		name      string
+		projectID project.ProjectID
+		ownerID   user.UserID
+		title     string
+		wantErr   error
 	}{
-		{"Project IDがゼロ値", project.ProjectID{}, owner.ID(), "title", document.ConfidentialityPublic, project.ErrInvalidProjectID},
-		{"Owner IDがゼロ値", p.ID(), user.UserID{}, "title", document.ConfidentialityPublic, user.ErrInvalidUserID},
-		{"タイトルが空白のみ", p.ID(), owner.ID(), "  ", document.ConfidentialityPublic, document.ErrDocumentTitleRequired},
-		{"機密区分が不正", p.ID(), owner.ID(), "title", document.Confidentiality("invalid"), document.ErrInvalidConfidentiality},
+		{"Project IDがゼロ値", project.ProjectID{}, owner.ID(), "title", project.ErrInvalidProjectID},
+		{"Owner IDがゼロ値", p.ID(), user.UserID{}, "title", user.ErrInvalidUserID},
+		{"タイトルが空白のみ", p.ID(), owner.ID(), "  ", document.ErrDocumentTitleRequired},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := document.NewDocument(tt.projectID, tt.ownerID, tt.title, "", tt.confidentiality)
+			_, err := document.NewDocument(tt.projectID, tt.ownerID, tt.title, "")
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("NewDocument() error = %v, want %v", err, tt.wantErr)
 			}
@@ -63,11 +49,11 @@ func TestNewDocumentRejectsInvalidValues(t *testing.T) {
 func TestReconstructDocument(t *testing.T) {
 	t.Parallel()
 	original, p, owner := newTestDocument(t)
-	d, err := document.Reconstruct(original.ID(), p.ID(), owner.ID(), "restored", "body", document.ConfidentialityConfidential, document.DocumentStatusArchived)
+	d, err := document.Reconstruct(original.ID(), p.ID(), owner.ID(), "restored", "body")
 	if err != nil {
 		t.Fatalf("Reconstruct() error = %v", err)
 	}
-	if !d.ID().Equal(original.ID()) || d.Title() != "restored" || d.Content() != "body" || d.Confidentiality() != document.ConfidentialityConfidential || d.Status() != document.DocumentStatusArchived {
+	if !d.ID().Equal(original.ID()) || d.Title() != "restored" || d.Content() != "body" {
 		t.Fatal("Reconstruct() did not restore all values")
 	}
 }
@@ -76,27 +62,23 @@ func TestReconstructDocumentRejectsInvalidValues(t *testing.T) {
 	t.Parallel()
 	original, p, owner := newTestDocument(t)
 	tests := []struct {
-		name            string
-		id              document.DocumentID
-		projectID       project.ProjectID
-		ownerID         user.UserID
-		title           string
-		confidentiality document.Confidentiality
-		status          document.DocumentStatus
-		wantErr         error
+		name      string
+		id        document.DocumentID
+		projectID project.ProjectID
+		ownerID   user.UserID
+		title     string
+		wantErr   error
 	}{
-		{"Document IDがゼロ値", document.DocumentID{}, p.ID(), owner.ID(), "title", document.ConfidentialityPublic, document.DocumentStatusActive, document.ErrInvalidDocumentID},
-		{"Project IDがゼロ値", original.ID(), project.ProjectID{}, owner.ID(), "title", document.ConfidentialityPublic, document.DocumentStatusActive, project.ErrInvalidProjectID},
-		{"Owner IDがゼロ値", original.ID(), p.ID(), user.UserID{}, "title", document.ConfidentialityPublic, document.DocumentStatusActive, user.ErrInvalidUserID},
-		{"タイトルが空", original.ID(), p.ID(), owner.ID(), "", document.ConfidentialityPublic, document.DocumentStatusActive, document.ErrDocumentTitleRequired},
-		{"タイトルが空白のみ", original.ID(), p.ID(), owner.ID(), "  ", document.ConfidentialityPublic, document.DocumentStatusActive, document.ErrDocumentTitleRequired},
-		{"機密区分が不正", original.ID(), p.ID(), owner.ID(), "title", document.Confidentiality("invalid"), document.DocumentStatusActive, document.ErrInvalidConfidentiality},
-		{"Statusが不正", original.ID(), p.ID(), owner.ID(), "title", document.ConfidentialityPublic, document.DocumentStatus("invalid"), document.ErrInvalidDocumentStatus},
+		{"Document IDがゼロ値", document.DocumentID{}, p.ID(), owner.ID(), "title", document.ErrInvalidDocumentID},
+		{"Project IDがゼロ値", original.ID(), project.ProjectID{}, owner.ID(), "title", project.ErrInvalidProjectID},
+		{"Owner IDがゼロ値", original.ID(), p.ID(), user.UserID{}, "title", user.ErrInvalidUserID},
+		{"タイトルが空", original.ID(), p.ID(), owner.ID(), "", document.ErrDocumentTitleRequired},
+		{"タイトルが空白のみ", original.ID(), p.ID(), owner.ID(), "  ", document.ErrDocumentTitleRequired},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := document.Reconstruct(tt.id, tt.projectID, tt.ownerID, tt.title, "content", tt.confidentiality, tt.status)
+			_, err := document.Reconstruct(tt.id, tt.projectID, tt.ownerID, tt.title, "content")
 			if !errors.Is(err, tt.wantErr) {
 				t.Fatalf("Reconstruct() error = %v, want %v", err, tt.wantErr)
 			}
@@ -107,10 +89,7 @@ func TestReconstructDocumentRejectsInvalidValues(t *testing.T) {
 func TestDocumentChanges(t *testing.T) {
 	t.Parallel()
 	d, _, _ := newTestDocument(t)
-	newOwner, err := user.NewUser("new owner")
-	if err != nil {
-		t.Fatal(err)
-	}
+	newOwner := testutil.NewUser(t, "new owner")
 	if err := d.ChangeTitle("changed"); err != nil {
 		t.Fatal(err)
 	}
@@ -118,10 +97,7 @@ func TestDocumentChanges(t *testing.T) {
 	if err := d.ChangeOwner(newOwner.ID()); err != nil {
 		t.Fatal(err)
 	}
-	if err := d.ChangeConfidentiality(document.ConfidentialityConfidential); err != nil {
-		t.Fatal(err)
-	}
-	if d.Title() != "changed" || d.Content() != "changed content" || !d.OwnerUserID().Equal(newOwner.ID()) || d.Confidentiality() != document.ConfidentialityConfidential {
+	if d.Title() != "changed" || d.Content() != "changed content" || !d.OwnerUserID().Equal(newOwner.ID()) {
 		t.Fatal("change methods did not update all values")
 	}
 }
@@ -134,22 +110,6 @@ func TestDocumentRejectsInvalidChangesWithoutChangingState(t *testing.T) {
 	}
 	if err := d.ChangeOwner(user.UserID{}); !errors.Is(err, user.ErrInvalidUserID) || !d.OwnerUserID().Equal(owner.ID()) {
 		t.Fatal("ChangeOwner() must reject a zero ID without changing state")
-	}
-	if err := d.ChangeConfidentiality(document.Confidentiality("invalid")); !errors.Is(err, document.ErrInvalidConfidentiality) || d.Confidentiality() != document.ConfidentialityInternal {
-		t.Fatal("ChangeConfidentiality() must reject an invalid value without changing state")
-	}
-}
-
-func TestDocumentArchiveAndRestore(t *testing.T) {
-	t.Parallel()
-	d, _, _ := newTestDocument(t)
-	d.Archive()
-	if d.Status() != document.DocumentStatusArchived {
-		t.Fatal("Archive() did not archive the document")
-	}
-	d.Restore()
-	if d.Status() != document.DocumentStatusActive {
-		t.Fatal("Restore() did not restore the document")
 	}
 }
 

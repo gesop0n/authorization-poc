@@ -5,6 +5,7 @@ import (
 
 	domaindocument "github.com/gesop0n/authorization-poc/apps/api/internal/domain/document"
 	domainproject "github.com/gesop0n/authorization-poc/apps/api/internal/domain/project"
+	"github.com/gesop0n/authorization-poc/apps/api/internal/domain/user"
 )
 
 type EditUseCase struct {
@@ -13,9 +14,10 @@ type EditUseCase struct {
 }
 
 type EditInput struct {
-	DocumentID domaindocument.DocumentID
-	Title      string
-	Content    string
+	DocumentID  domaindocument.DocumentID
+	ActorUserID user.UserID
+	Title       string
+	Content     string
 }
 
 func NewEditUseCase(
@@ -33,8 +35,8 @@ func (uc *EditUseCase) Execute(ctx context.Context, input EditInput) error {
 	if err != nil {
 		return err
 	}
-	if doc.Status() == domaindocument.DocumentStatusArchived {
-		return domaindocument.ErrDocumentArchived
+	if !doc.OwnerUserID().Equal(input.ActorUserID) {
+		return ErrOnlyDocumentOwner
 	}
 
 	p, err := uc.projectRepository.FindByID(ctx, doc.ProjectID())

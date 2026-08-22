@@ -19,11 +19,10 @@ func TestCreateUseCase(t *testing.T) {
 	uc := documentusecase.NewCreateUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	doc, err := uc.Execute(context.Background(), documentusecase.CreateInput{
-		ProjectID:       p.ID(),
-		OwnerUserID:     owner.ID(),
-		Title:           "title",
-		Content:         "content",
-		Confidentiality: domaindocument.ConfidentialityInternal,
+		ProjectID:   p.ID(),
+		OwnerUserID: owner.ID(),
+		Title:       "title",
+		Content:     "content",
 	})
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -41,11 +40,10 @@ func TestCreateUseCaseRejectsArchivedProject(t *testing.T) {
 	uc := documentusecase.NewCreateUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	doc, err := uc.Execute(context.Background(), documentusecase.CreateInput{
-		ProjectID:       p.ID(),
-		OwnerUserID:     owner.ID(),
-		Title:           "title",
-		Content:         "content",
-		Confidentiality: domaindocument.ConfidentialityInternal,
+		ProjectID:   p.ID(),
+		OwnerUserID: owner.ID(),
+		Title:       "title",
+		Content:     "content",
 	})
 	if !errors.Is(err, domainproject.ErrProjectArchived) {
 		t.Fatalf("Execute() error = %v, want %v", err, domainproject.ErrProjectArchived)
@@ -57,14 +55,15 @@ func TestCreateUseCaseRejectsArchivedProject(t *testing.T) {
 
 func TestEditUseCase(t *testing.T) {
 	t.Parallel()
-	doc, p, _ := testutil.NewDocumentWithProject(t)
+	doc, p, owner := testutil.NewDocumentWithProject(t)
 	documentRepository := &mockDocumentRepository{document: doc}
 	uc := documentusecase.NewEditUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	err := uc.Execute(context.Background(), documentusecase.EditInput{
-		DocumentID: doc.ID(),
-		Title:      "changed",
-		Content:    "changed content",
+		DocumentID:  doc.ID(),
+		ActorUserID: owner.ID(),
+		Title:       "changed",
+		Content:     "changed content",
 	})
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -76,13 +75,13 @@ func TestEditUseCase(t *testing.T) {
 
 func TestEditUseCaseRejectsArchivedProject(t *testing.T) {
 	t.Parallel()
-	doc, p, _ := testutil.NewDocumentWithProject(t)
+	doc, p, owner := testutil.NewDocumentWithProject(t)
 	p.Archive()
 	documentRepository := &mockDocumentRepository{document: doc}
 	uc := documentusecase.NewEditUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	err := uc.Execute(context.Background(), documentusecase.EditInput{
-		DocumentID: doc.ID(), Title: "changed", Content: "changed content",
+		DocumentID: doc.ID(), ActorUserID: owner.ID(), Title: "changed", Content: "changed content",
 	})
 	if !errors.Is(err, domainproject.ErrProjectArchived) {
 		t.Fatalf("Execute() error = %v, want %v", err, domainproject.ErrProjectArchived)
@@ -90,35 +89,70 @@ func TestEditUseCaseRejectsArchivedProject(t *testing.T) {
 	assertDocumentUnchangedAndUnsaved(t, doc, documentRepository)
 }
 
-func TestEditUseCaseRejectsArchivedDocument(t *testing.T) {
+func TestEditUseCaseRejectsNonOwner(t *testing.T) {
 	t.Parallel()
 	doc, p, _ := testutil.NewDocumentWithProject(t)
-	doc.Archive()
+	nonOwner := testutil.NewUser(t, "non-owner")
 	documentRepository := &mockDocumentRepository{document: doc}
 	uc := documentusecase.NewEditUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	err := uc.Execute(context.Background(), documentusecase.EditInput{
-		DocumentID: doc.ID(), Title: "changed", Content: "changed content",
+		DocumentID: doc.ID(), ActorUserID: nonOwner.ID(), Title: "changed", Content: "changed content",
 	})
-	if !errors.Is(err, domaindocument.ErrDocumentArchived) {
-		t.Fatalf("Execute() error = %v, want %v", err, domaindocument.ErrDocumentArchived)
+	if !errors.Is(err, documentusecase.ErrOnlyDocumentOwner) {
+		t.Fatalf("Execute() error = %v, want %v", err, documentusecase.ErrOnlyDocumentOwner)
 	}
 	assertDocumentUnchangedAndUnsaved(t, doc, documentRepository)
 }
 
 func TestEditUseCaseRejectsInvalidTitleWithoutPartialChange(t *testing.T) {
 	t.Parallel()
-	doc, p, _ := testutil.NewDocumentWithProject(t)
+	doc, p, owner := testutil.NewDocumentWithProject(t)
 	documentRepository := &mockDocumentRepository{document: doc}
 	uc := documentusecase.NewEditUseCase(&mockProjectRepository{project: p}, documentRepository)
 
 	err := uc.Execute(context.Background(), documentusecase.EditInput{
-		DocumentID: doc.ID(), Title: "  ", Content: "changed content",
+		DocumentID: doc.ID(), ActorUserID: owner.ID(), Title: "  ", Content: "changed content",
 	})
 	if !errors.Is(err, domaindocument.ErrDocumentTitleRequired) {
 		t.Fatalf("Execute() error = %v, want %v", err, domaindocument.ErrDocumentTitleRequired)
 	}
 	assertDocumentUnchangedAndUnsaved(t, doc, documentRepository)
+}
+
+func TestDeleteUseCase(t *testing.T) {
+	t.Parallel()
+	doc, _, owner := testutil.NewDocumentWithProject(t)
+	repository := &mockDocumentRepository{document: doc}
+	uc := documentusecase.NewDeleteUseCase(repository)
+
+	err := uc.Execute(context.Background(), documentusecase.DeleteInput{
+		DocumentID: doc.ID(), ActorUserID: owner.ID(),
+	})
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if !repository.deletedID.Equal(doc.ID()) {
+		t.Fatal("Execute() did not delete the document")
+	}
+}
+
+func TestDeleteUseCaseRejectsNonOwner(t *testing.T) {
+	t.Parallel()
+	doc, _, _ := testutil.NewDocumentWithProject(t)
+	nonOwner := testutil.NewUser(t, "non-owner")
+	repository := &mockDocumentRepository{document: doc}
+	uc := documentusecase.NewDeleteUseCase(repository)
+
+	err := uc.Execute(context.Background(), documentusecase.DeleteInput{
+		DocumentID: doc.ID(), ActorUserID: nonOwner.ID(),
+	})
+	if !errors.Is(err, documentusecase.ErrOnlyDocumentOwner) {
+		t.Fatalf("Execute() error = %v, want %v", err, documentusecase.ErrOnlyDocumentOwner)
+	}
+	if !repository.deletedID.IsZero() {
+		t.Fatal("Execute() deleted a document owned by another user")
+	}
 }
 
 func assertDocumentUnchangedAndUnsaved(t *testing.T, doc *domaindocument.Document, repository *mockDocumentRepository) {
@@ -144,9 +178,10 @@ func (r *mockProjectRepository) FindByWorkspaceID(context.Context, workspace.Wor
 func (r *mockProjectRepository) Save(context.Context, *domainproject.Project) error { return nil }
 
 type mockDocumentRepository struct {
-	document *domaindocument.Document
-	saved    *domaindocument.Document
-	err      error
+	document  *domaindocument.Document
+	saved     *domaindocument.Document
+	deletedID domaindocument.DocumentID
+	err       error
 }
 
 func (r *mockDocumentRepository) FindByID(context.Context, domaindocument.DocumentID) (*domaindocument.Document, error) {
@@ -155,5 +190,10 @@ func (r *mockDocumentRepository) FindByID(context.Context, domaindocument.Docume
 
 func (r *mockDocumentRepository) Save(_ context.Context, doc *domaindocument.Document) error {
 	r.saved = doc
+	return r.err
+}
+
+func (r *mockDocumentRepository) Delete(_ context.Context, id domaindocument.DocumentID) error {
+	r.deletedID = id
 	return r.err
 }

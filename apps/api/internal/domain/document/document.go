@@ -9,13 +9,11 @@ import (
 )
 
 type Document struct {
-	id              DocumentID
-	projectID       project.ProjectID
-	ownerUserID     user.UserID
-	title           string
-	content         string
-	confidentiality Confidentiality
-	status          DocumentStatus
+	id          DocumentID
+	projectID   project.ProjectID
+	ownerUserID user.UserID
+	title       string
+	content     string
 }
 
 func NewDocument(
@@ -23,7 +21,6 @@ func NewDocument(
 	ownerUserID user.UserID,
 	title string,
 	content string,
-	confidentiality Confidentiality,
 ) (*Document, error) {
 	if projectID.IsZero() {
 		return nil, project.ErrInvalidProjectID
@@ -37,23 +34,17 @@ func NewDocument(
 		return nil, ErrDocumentTitleRequired
 	}
 
-	if !confidentiality.IsValid() {
-		return nil, ErrInvalidConfidentiality
-	}
-
 	id, err := newDocumentID()
 	if err != nil {
 		return nil, fmt.Errorf("create document: %w", err)
 	}
 
 	return &Document{
-		id:              id,
-		projectID:       projectID,
-		ownerUserID:     ownerUserID,
-		title:           title,
-		content:         content,
-		confidentiality: confidentiality,
-		status:          DocumentStatusActive,
+		id:          id,
+		projectID:   projectID,
+		ownerUserID: ownerUserID,
+		title:       title,
+		content:     content,
 	}, nil
 }
 
@@ -63,8 +54,6 @@ func Reconstruct(
 	ownerUserID user.UserID,
 	title string,
 	content string,
-	confidentiality Confidentiality,
-	status DocumentStatus,
 ) (*Document, error) {
 	if id.IsZero() {
 		return nil, ErrInvalidDocumentID
@@ -78,21 +67,12 @@ func Reconstruct(
 	if strings.TrimSpace(title) == "" {
 		return nil, ErrDocumentTitleRequired
 	}
-	if !confidentiality.IsValid() {
-		return nil, ErrInvalidConfidentiality
-	}
-	if !status.IsValid() {
-		return nil, ErrInvalidDocumentStatus
-	}
-
 	return &Document{
-		id:              id,
-		projectID:       projectID,
-		ownerUserID:     ownerUserID,
-		title:           title,
-		content:         content,
-		confidentiality: confidentiality,
-		status:          status,
+		id:          id,
+		projectID:   projectID,
+		ownerUserID: ownerUserID,
+		title:       title,
+		content:     content,
 	}, nil
 }
 
@@ -107,10 +87,6 @@ func (d *Document) OwnerUserID() user.UserID { return d.ownerUserID }
 func (d *Document) Title() string { return d.title }
 
 func (d *Document) Content() string { return d.content }
-
-func (d *Document) Confidentiality() Confidentiality { return d.confidentiality }
-
-func (d *Document) Status() DocumentStatus { return d.status }
 
 func (d *Document) ChangeTitle(title string) error {
 	if strings.TrimSpace(title) == "" {
@@ -129,15 +105,3 @@ func (d *Document) ChangeOwner(ownerUserID user.UserID) error {
 	d.ownerUserID = ownerUserID
 	return nil
 }
-
-func (d *Document) ChangeConfidentiality(confidentiality Confidentiality) error {
-	if !confidentiality.IsValid() {
-		return ErrInvalidConfidentiality
-	}
-	d.confidentiality = confidentiality
-	return nil
-}
-
-func (d *Document) Archive() { d.status = DocumentStatusArchived }
-
-func (d *Document) Restore() { d.status = DocumentStatusActive }

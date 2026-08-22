@@ -14,11 +14,10 @@ type CreateUseCase struct {
 }
 
 type CreateInput struct {
-	ProjectID       domainproject.ProjectID
-	OwnerUserID     user.UserID
-	Title           string
-	Content         string
-	Confidentiality domaindocument.Confidentiality
+	ProjectID   domainproject.ProjectID
+	OwnerUserID user.UserID
+	Title       string
+	Content     string
 }
 
 func NewCreateUseCase(
@@ -45,7 +44,6 @@ func (uc *CreateUseCase) Execute(ctx context.Context, input CreateInput) (*domai
 		input.OwnerUserID,
 		input.Title,
 		input.Content,
-		input.Confidentiality,
 	)
 	if err != nil {
 		return nil, err

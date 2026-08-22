@@ -45,7 +45,7 @@ func NewProjectWithWorkspace(t testing.TB, projectName, workspaceName, ownerName
 func NewDocumentWithProject(t testing.TB) (*document.Document, *project.Project, *user.User) {
 	t.Helper()
 	p, _, owner := NewProjectWithWorkspace(t, "project", "workspace", "owner")
-	d, err := document.NewDocument(p.ID(), owner.ID(), "title", "content", document.ConfidentialityInternal)
+	d, err := document.NewDocument(p.ID(), owner.ID(), "title", "content")
 	if err != nil {
 		t.Fatalf("document.NewDocument() error = %v", err)
 	}
